@@ -20,7 +20,19 @@ object CRUD extends App {
   val collection: MongoCollection[Document] = database.getCollection("CRUD")
   collection.drop().results()
   
-  // Add a document.
+  // You can compose BSON documents like this.
+  val doc1 = Document("AL" -> "Alabama")
+  val doc2 = doc1 + ("AK" -> "Alaska")
+  val doc3 = doc2 ++ Document("AR" -> "Arkansas", "AZ" -> "Arizona")
+  println(s"Document 1: $doc1")
+  println(s"Document 2: $doc2")
+  println(s"Document 3: $doc3")
+  
+  // Convert between documents and JSON strings like this.
+  println(s"Document 3 as JSON: ${doc3.toJson()}")
+  println(s"A new document from a JSON string: ${Document("""{"IL": "Illinois", "VA": "Virginia"}""")}")
+  
+  println("\nAdd a document...")
   val doc = Document("_id" -> 0, "name" -> "MongoDB", "type" -> "database", "count" -> 1, "info" -> Document("x" -> 203, "y" -> 102))
   collection.insertOne(doc).results()
   collection.find.first().printResults()

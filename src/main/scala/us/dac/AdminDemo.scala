@@ -3,10 +3,7 @@ package us.dac
 import org.mongodb.scala._
 import org.mongodb.scala.model.Indexes._
 
-import org.bson.conversions.Bson
-
 import us.dac.Helpers._
-
 
 object AdminDemo extends App {
   
@@ -67,7 +64,7 @@ object AdminDemo extends App {
   database.listCollectionNames().printResults()
   
   println("\nRun a command (to get build info) that has no helper in the MongoDB Scala Driver...")
-  val buildInfoCommand: Bson = Document("buildInfo" -> 1)
+  val buildInfoCommand = Document("buildInfo" -> 1)
   database.runCommand(buildInfoCommand).printResults()
   
   mongoClient.close()
