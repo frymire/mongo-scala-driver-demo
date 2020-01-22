@@ -12,17 +12,16 @@ import org.mongodb.scala.model.{WriteModel, InsertOneModel, UpdateOneModel, Dele
 import us.dac.Helpers._
 
 // Before running, call "mongod --dbpath C:\Users\Mark.E.Frymire\Documents\MongoDB" or equivalent.
-object DemoMongoConnection extends App {
+object CRUD extends App {
   
-  // Connect to the "mydb" database and make a new collection called "test".
+  // Connect to the "MongoScalaDriverDemo" database and make a new collection called "CRUD".
   val mongoClient = MongoClient()
-  val database = mongoClient.getDatabase("mydb")
-  val collection: MongoCollection[Document] = database.getCollection("test")
+  val database = mongoClient.getDatabase("MongoScalaDriverDemo")
+  val collection: MongoCollection[Document] = database.getCollection("CRUD")
   collection.drop().results()
   
   // Add a document.
-  val doc = 
-    Document("_id" -> 0, "name" -> "MongoDB", "type" -> "database", "count" -> 1, "info" -> Document("x" -> 203, "y" -> 102))
+  val doc = Document("_id" -> 0, "name" -> "MongoDB", "type" -> "database", "count" -> 1, "info" -> Document("x" -> 203, "y" -> 102))
   collection.insertOne(doc).results()
   collection.find.first().printResults()
   println(s"Number of documents (should be 1): ${collection.countDocuments().headResult()}")
