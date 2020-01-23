@@ -1,7 +1,10 @@
 package us.dac
 
 import org.mongodb.scala._
-import org.mongodb.scala.model.Aggregates._
+import org.mongodb.scala.model.Filters.{equal}
+import org.mongodb.scala.model.Aggregates.{filter, group, sort}
+import org.mongodb.scala.model.Accumulators.{sum}
+import org.mongodb.scala.model.Sorts.{orderBy, descending}
 
 import us.dac.Helpers._
 
@@ -23,12 +26,19 @@ object Aggregation extends App {
   collection.insertMany(documents).printResults()
   collection.find().printResults()
 
-  println("\nQuery for documents with status 'A', then sum the amounts for each customer ID...")
+  println("\nQuery for documents with status 'A', then sum the amounts for each customer ID, then sort in descending order...")
   val pipeline1 = Seq(
-      Document("""{$match: {status: "A"}}"""),
-      Document("""{$group: {_id: "$cust_id", total: {$sum: "$amount"} } }""")
+      filter(equal("status", "A")), // use filter for $match, since match is a reserved word in Scala
+      group("$cust_id", sum("total", "$amount")),
+      sort(orderBy(descending("total")))      
     ) 
   collection.aggregate(pipeline1).printResults()
+  
+  // You could also do it with text like this.
+//  val pipeline1 = Seq(
+//      Document("""{$match: {status: "A"}}"""),
+//      Document("""{$group: {_id: "$cust_id", total: {$sum: "$amount"} } }""")
+//    )
 
   
   mongoClient.close()
