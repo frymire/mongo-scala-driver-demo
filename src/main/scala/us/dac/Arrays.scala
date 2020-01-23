@@ -5,15 +5,14 @@ import org.mongodb.scala.model.Filters._
 
 import us.dac.Helpers._
 
-object ArrayQueries extends App {
+object Arrays extends App {
 
   // Connect to the "MongoScalaDriverDemo" database and make a new collection called "ArrayQueries".
   val mongoClient = MongoClient()
   val database = mongoClient.getDatabase("MongoScalaDriverDemo")
   val collection: MongoCollection[Document] = database.getCollection("ArrayQueries")
   collection.drop().results()
-  
-  
+    
   println("\nAdd a new set of documents with arrays...")
   val documentsWithArrays = List(      
         Document("""{ item: 'journal', qty: 25, tags: ['blank', 'red'], dim_cm: [ 14, 21 ] }"""),
