@@ -35,7 +35,7 @@ object EmbeddedDocumentArrays extends App {
   println("\nReturn documents where the first embedded document in the instock array field has a qty greater than 30...")
   collection.find(gt("instock.0.qty", 30)).printResults()
 
-  println("\nReturn documents where a single embedded document in instock has a qty of 5 and warehouse A (works with order reversed)...")
+  println("\nQuery for single embedded documents in instock with a qty of 5 and warehouse A (works with order reversed)...")
   collection.find(elemMatch("instock", Document("qty" -> 5, "warehouse" -> "A"))).printResults()
   
   println("\nReturn documents where any combination of embedded documents in instock has a qty of 5 and warehouse A...")
@@ -44,7 +44,7 @@ object EmbeddedDocumentArrays extends App {
   println("\nReturn documents where a single embedded document in instock has a qty between 10 and 20...")
   collection.find(elemMatch("instock", Document("""{ qty: { $gt: 10, $lt: 20 } }"""))).printResults()
   
-  println("\nReturn documents where a document in instock has a qty greater than 10 and one (possibly different) has a qty less than 20...")
+  println("\nReturn documents where a document in instock has qty > 10 and one (possibly different) has qty < 20...")
   collection.find(and(gt("instock.qty", 10), lt("instock.qty", 20))).printResults()
 
   mongoClient.close()

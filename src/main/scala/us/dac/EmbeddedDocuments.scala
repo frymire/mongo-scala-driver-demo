@@ -23,10 +23,10 @@ object EmbeddedDocuments extends App {
   collection.insertMany(documentsWithEmbeddedDocuments).printResults()
   collection.find().printResults()
   
-  println("\nQuery for the embedded document \"{ size: { h: 14, w: 21, uom: 'cm' }\"...")
+  println("\nQuery for the embedded document \"{ size: { h:14, w:21, uom:'cm' }\"...")
   collection.find(equal("size", Document("h" -> 8.5, "w" -> 11, "uom" -> "in"))).printResults()
 
-  println("\nQuery for the embedded document \"{ size: { w: 21, h: 14, uom: 'cm' }\" with fields in the wrong order (no matches)...")
+  println("\nQuery for the embedded document \"{size: {w:21, h:14, uom:'cm' }\" with fields in the wrong order (no matches)...")
   collection.find(equal("size", Document("w" -> 11, "h" -> 8.5, "uom" -> "in"))).printResults()
   
   println("\nUse dot notation to query on the nested field \"{ size.uom: 'cm' }\"...")

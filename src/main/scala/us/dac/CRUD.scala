@@ -35,15 +35,14 @@ object CRUD extends App {
   println(s"A document with an array: ${Document("Hello" -> "World", "someNumbers" -> List(2,3,4))}")
   
   println("\nAdd a document...")
-  val doc = Document("_id" -> 0, "name" -> "MongoDB", "type" -> "database", "count" -> 1, "info" -> Document("x" -> 203, "y" -> 102))
-  collection.insertOne(doc).results()
+  collection.insertOne(doc3).results()
   collection.find.first().printResults()
   println(s"Number of documents (should be 1): ${collection.countDocuments().headResult()}")
   
   println("\nInsert 10 new documents, but without incurring network I/O...")
   val documents = (1 to 10) map { i => Document("i" -> i) }
   val insertObservable = collection.insertMany(documents)
-  println(s"Number of documents after inserting 10 (still 1, since no network I/O): ${collection.countDocuments().headResult()}")
+  println(s"# documents after inserting 10 (still 1, since no network I/O): ${collection.countDocuments().headResult()}")
   
   println("\nForce it to execute by using results() from the Helpers trait...")
   insertObservable.results()
@@ -55,19 +54,16 @@ object CRUD extends App {
   println("\nQuery for a specific document...")
   collection.find(equal("i", 7)).printResults()
   
+  println("\nReturn documents with no i field...")
+  collection.find(exists("i", false)).printResults()
+  
   println("\nQuery for a range of documents...")
   val rangeQuery = and(gt("i", 4), lte("i", 7))
   collection.find(rangeQuery).printResults()  
   
   println("\nSort query results in descending order...")
   collection.find(rangeQuery).sort(descending("i")).printResults()  
-  
-  println("\nExclude the '_id' field...")
-  collection.find(rangeQuery).projection(excludeId()).printResults()
-  
-  println("\nProject down to the '_id' field specifically. This implicitly excludes other unnamed fields...")
-  collection.find(rangeQuery).projection(include("_id")).printResults()
-
+    
   println("\nAggregate to make a field that is 10*i, for records with i > 7...")
   val pipeline1 = Seq(
       filter(gt("i", 7)),
@@ -109,8 +105,10 @@ object CRUD extends App {
 
   println("\nPerform document operations in bulk with order guaranteed...")
   collection.bulkWrite(documentOperations).printResults()
-//  collection.bulkWrite(documentOperations, BulkWriteOptions().ordered(false)).printResults() // Do this for unordered bulk operation
   collection.find().printResults()
   
+  // For unordered bulk operation, do this instead.
+  // collection.bulkWrite(documentOperations, BulkWriteOptions().ordered(false)).printResults()
+
   mongoClient.close()
 }
