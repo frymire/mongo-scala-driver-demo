@@ -32,6 +32,8 @@ object CRUD extends App {
   println(s"Document 3 as JSON: ${doc3.toJson()}")
   println(s"A new document from a JSON string: ${Document("""{"IL": "Illinois", "VA": "Virginia"}""")}")
   
+  println(s"A document with an array: ${Document("Hello" -> "World", "someNumbers" -> List(2,3,4))}")
+  
   println("\nAdd a document...")
   val doc = Document("_id" -> 0, "name" -> "MongoDB", "type" -> "database", "count" -> 1, "info" -> Document("x" -> 203, "y" -> 102))
   collection.insertOne(doc).results()
@@ -70,11 +72,11 @@ object CRUD extends App {
   val pipeline1 = Seq(
       filter(gt("i", 7)),
       project( Document("""{ITimes10: {$multiply: ["$i", 10]}}""") )
-  ) 
+    ) 
   collection.aggregate(pipeline1).printResults()
   
+  // To accumulate over the whole document set, group with a groupBy parameter of null.
   println("\nSum the values of the i field...")
-  // To use accumulators over the whole document set, group with a groupBy parameter of null.
   val pipeline2 = List(group(null, sum("total", "$i"), avg("mean", "$i")))
   collection.aggregate(pipeline2).printResults()
   
@@ -94,8 +96,8 @@ object CRUD extends App {
   collection.deleteMany(gte("i", 100)).printHeadResult("Update Result: ")
   collection.find().printResults()
   
-  // Define multiple documents to be written in bulk.
-  val writes: List[WriteModel[_ <: Document]] = List(
+  // Define multiple document insertion, update, deletion and replacement operations to be executed in bulk.
+  val documentOperations: List[WriteModel[_ <: Document]] = List(
       InsertOneModel(Document("_id" -> 4)),
       InsertOneModel(Document("_id"-> 5)),
       InsertOneModel(Document("_id" -> 6)),
@@ -105,9 +107,9 @@ object CRUD extends App {
       ReplaceOneModel(Document("_id" -> 6), Document("_id" -> 6, "x" -> 4))
     )
 
-  println("\nWrite documents in bulk with order guaranteed...")
-  collection.bulkWrite(writes).printResults()
-//  collection.bulkWrite(writes, BulkWriteOptions().ordered(false)).printResults() // Do this for unordered bulk operation
+  println("\nPerform document operations in bulk with order guaranteed...")
+  collection.bulkWrite(documentOperations).printResults()
+//  collection.bulkWrite(documentOperations, BulkWriteOptions().ordered(false)).printResults() // Do this for unordered bulk operation
   collection.find().printResults()
   
   mongoClient.close()
