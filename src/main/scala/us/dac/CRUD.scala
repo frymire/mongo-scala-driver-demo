@@ -26,14 +26,15 @@ object CRUD extends App {
   val doc3 = doc2 ++ Document("AR" -> "Arkansas", "AZ" -> "Arizona")
   println(s"Document 1: $doc1")
   println(s"Document 2: $doc2")
-  println(s"Document 3: $doc3")
+  println(s"Document 3: $doc3")  
   
   // Convert between documents and JSON strings like this.
-  println(s"Document 3 as JSON: ${doc3.toJson()}")
+  println(s"\nDocument 3 as JSON: ${doc3.toJson()}")
+  println(s"Print just the value of the \'AL\' field: ${doc3("AL")}")
   println(s"A new document from a JSON string: ${Document("""{"IL": "Illinois", "VA": "Virginia"}""")}")
   
   println(s"A document with an array: ${Document("Hello" -> "World", "someNumbers" -> List(2,3,4))}")
-  
+    
   println("\nAdd a document...")
   collection.insertOne(doc3).results()
   collection.find.first().printResults()
