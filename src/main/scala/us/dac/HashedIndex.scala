@@ -18,7 +18,7 @@ object HashedIndex extends App {
     ("0" * (nBits - unpaddedString.length)) + unpaddedString     
   }
   
-  println("\nAdd a set of documents with random integer codes...")
+  println("\nAdd a set of documents with random integer codes (takes several seconds)...")
   val documents = (1 to 1000000) map { i => 
     val code = util.Random.nextInt(256*256)
     Document("code" -> code, "codeString" -> pad(code.toBinaryString)) 
@@ -34,6 +34,7 @@ object HashedIndex extends App {
     
   println("\nCreated a hashed index on the \'code\' field...")
   collection.createIndex(hashed("code")).printResults()
+  collection.listIndexes().printResults()
   
   println("\nRerun the query (~100x faster)...")
   database.runCommand(command).printResults()
