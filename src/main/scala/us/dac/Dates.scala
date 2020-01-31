@@ -13,10 +13,6 @@ import org.mongodb.scala.model.Updates.{combine, set, currentDate, currentTimest
 import us.dac.Helpers._
 
 
-// https://docs.mongodb.com/manual/meta/aggregation-quick-reference/#date-expression-operators
-// https://docs.mongodb.com/manual/reference/operator/aggregation/dateFromString/#exp._S_dateFromString
-// https://docs.mongodb.com/manual/reference/operator/aggregation/toDate/#exp._S_toDate
-
 object Dates extends App {
 
   // Use Java utilities to define date formats.
@@ -24,6 +20,7 @@ object Dates extends App {
   val format2 = new SimpleDateFormat("MM/dd/yyyy hh:mm aa zzz")
 
   val kurt = format1.parse("8/1/1978 17:00:00 CST")
+  println(s"Kurt's birthday as milliseconds after Unix epoch: ${kurt.getTime()}")
   println(s"Kurt's birthday as a time instant: ${kurt.toInstant()}")
   println(s"Kurt's birthday as a string: $kurt")
   
@@ -38,6 +35,7 @@ object Dates extends App {
         Document("""{ name: "Unix Epoch", date: { "$date": "1970-01-01T00:00:00.000Z" } }"""),
         Document("""{ name: "1 second before Unix Epoch", date: ISODate("1969-12-31T23:59:59.000Z") } }"""),
         Document("""{ name: "1 second after Unix Epoch", date: ISODate("1970-01-01T00:00:01.000Z") }"""),
+        Document("""{ name: "1 second after Unix Epoch in EST", date: ISODate("1970-01-01T00:00:01.000-0500") }"""),
         Document("""{ name: "1 second after Unix Epoch as long int", date: {$date: 1000} }"""),
         Document("""{ name: "1 second after Unix Epoch as JavaScript date", date: new Date(1000) }"""),
         Document("name" -> "Mark", "date" -> format2.parse("1/24/1975 2:10 am CST")),
@@ -100,6 +98,61 @@ object Dates extends App {
       ))
     )      
   fromPartsCollection.aggregate(fromPartsPipeline).printResults()
+
+  
+  println("\nMake a collection with documents that define dates as strings in various formats...")
+  val fromStringsDocuments = List(   
+      Document("name" -> "Edward birth instant", "dateString" -> "2018-08-11T20:05:00.000"),
+      Document("name" -> "Edward birth day only", "dateString" -> "2018-08-11"),
+      Document("name" -> "Edward birth day in a different format", "dateString" -> "8/11/2018")
+    )
+  val fromStringsCollection: MongoCollection[Document] = database.getCollection("DatesFromStrings")
+  fromStringsCollection.drop().results()
+  fromStringsCollection.insertMany(fromStringsDocuments).results()
+  fromStringsCollection.find().printResults()
+
+  println("\nCompute dates from strings in different formats...")
+  val fromStringsPipeline = Seq(
+      project(fields(
+          include("name", "dateString"), 
+          Document("date" -> Document("""{ $dateFromString: { "dateString" : "$dateString" } }""")),
+      )),
+      project(fields(
+          excludeId(),
+          include("name", "dateString", "date"), 
+          Document("formattedDate" -> Document("""{ $dateToString: { date: "$date", format: "%m/%d/%Y %H:%M" } }"""))
+      ))
+    )      
+  fromStringsCollection.aggregate(fromStringsPipeline).printResults()
+  
+
+  println("\nMake a collection with documents that define dates as values in various formats...")
+  val fromValuesDocuments = List(   
+      Document("name" -> "An ISO date instance string", "dateValue" -> "2020-01-31T00:00:00Z"),
+      Document("name" -> "A date string", "dateValue" -> "1/31/2020"),
+      Document("name" -> "1000.1 ms after Unix Epoch", "dateValue" -> 1000.1),
+      Document("""{ name: "1000.1 ms after Unix Epoch", dateValue: NumberDecimal("1000.1") }"""),
+      Document("""{ name: "1000 ms after Unix Epoch", dateValue: NumberLong("1000") }"""),
+      Document("""{ name: "An ObjectID made on 1/31/2020", dateValue: ObjectId("5e347b15cba19f5e654f7161") }""")
+    )
+  val fromValuesCollection: MongoCollection[Document] = database.getCollection("DatesFromValues")
+  fromValuesCollection.drop().results()
+  fromValuesCollection.insertMany(fromValuesDocuments).results()
+  fromValuesCollection.find().printResults()
+
+  println("\nCompute dates from values in different formats...")
+  val fromValuesPipeline = Seq(
+      project(fields(
+          include("name", "dateValue"), 
+          Document("date" -> Document("""{ $toDate: "$dateValue" }""")),
+      )),
+      project(fields(
+          excludeId(),
+          include("name", "dateValue", "date"), 
+          Document("formattedDate" -> Document("""{ $dateToString: { date: "$date", format: "%m/%d/%Y %H:%M:%S.%L" } }"""))
+      ))
+    )      
+  fromValuesCollection.aggregate(fromValuesPipeline).printResults()
 
   
   mongoClient.close()
