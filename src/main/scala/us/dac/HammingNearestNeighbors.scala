@@ -2,11 +2,17 @@ package us.dac
 
 import org.mongodb.scala._
 import org.mongodb.scala.bson.BsonBinary
-import org.mongodb.scala.model.Filters.{equal, in}
+import org.mongodb.scala.model.Aggregates.{filter, sort, out}
+import org.mongodb.scala.model.Filters.{or, equal, in}
 import org.mongodb.scala.model.Indexes.hashed
+import org.mongodb.scala.model.Sorts.{orderBy, ascending}
 
 import us.dac.Helpers._
 
+/*
+ * NOTE: The optimum substring length is log-base-2(numDocuments). So, with 2^16 = 65,536 records,
+ * you would want substrings of 16 bits. For 64-bit codes, then, you would have 4 substrings.
+ */
 object HammingNearestNeighbors extends App {
   
   val codeNumBytes = 4
@@ -14,7 +20,7 @@ object HammingNearestNeighbors extends App {
   val codeByteRange = 0 to codeNumBytes - 1
   
   /** Returns a byte from a list of positions with bits to be set to 1. */
-  def oneBits2Byte(ones: List[Int]) = ones map { (1 << _) } reduce { _ | _ } toByte;
+  def oneBits2Byte(ones: List[Int]) = ones map { 1 << _ } reduce { _ | _ } toByte;
 
   /** Returns the byte in the specified position (MSB = 3, LSB = 0) of the provided Int. */
   def getByteFromInt(x: Int, byteIndex: Int): Byte = (x >> 8*byteIndex).toByte
@@ -22,7 +28,7 @@ object HammingNearestNeighbors extends App {
   /** Returns a BsonBinary instance populated with a provided Byte. */
   def byte2Bson(b: Byte) = BsonBinary(Array(b))
   
-  /** Returns an integer based on a binary string. */
+  /** Returns an Int based on a binary string. */
   def binaryString2Int(str: String) = Integer.parseInt(str.replaceAll("\\s", ""), 2)
 
   /** Returns a string that results from prepending a provided string with 0s to reach a specified length. */
@@ -32,8 +38,11 @@ object HammingNearestNeighbors extends App {
   }
   
   /** Returns a string representation of a byte, padded to eight characters. */
-  def byte2String(theByte: Byte) = pad(theByte.toBinaryString, 8)
+  def byte2String(b: Byte) = pad(b.toBinaryString, 8)
   
+  /** Returns the number of bits in a byte that are set to 1. */
+  def popcount(b: Byte) = byte2String(b) count { _ == '1' }
+
   def createDocumentForCode(code: Int) = {
     val subcodes = codeByteRange map { i => getByteFromInt(code, i) }
     val codes = codeByteRange.reverse map { i => Document(s"code${i}" -> byte2Bson(subcodes(i))) } reduce { _ ++ _ }
@@ -48,7 +57,7 @@ object HammingNearestNeighbors extends App {
   collection.drop().results()
 
   println("\nAdd a set of documents with random and specific integer codes...")
-  val specificDocuments = List(39, 42) map { i => createDocumentForCode(i) }  
+  val specificDocuments = List(32, 39, 42, 44, 104) map { i => createDocumentForCode(i) }  
   val randomDocuments = (1 to 1000) map { i => createDocumentForCode(util.Random.nextInt()) }  
   collection.insertMany(specificDocuments ++ randomDocuments).printResults()
   collection.find().limit(10).printResults()
@@ -58,6 +67,30 @@ object HammingNearestNeighbors extends App {
   codeByteRange foreach { i => collection.createIndex(hashed(s"code$i")).printResults() } 
   collection.listIndexes().printResults()
 
+  val queryValue = 42
+  val queryBytes = codeByteRange map { i => byte2Bson(getByteFromInt(queryValue, i)) } 
+  
+  println("\nQuery for matches of 42 in the least significant byte...")
+  collection.find( equal("code0", queryBytes(0)) ).limit(10).printResults()
+
+  println("\nQuery for matches of 42 in the most significant byte...")
+  collection.find( equal(s"code${codeNumBytes - 1}", queryBytes(codeNumBytes - 1)) ).limit(10).printResults()
+  
+  println("\nQuery for documents at a max Hamming distance of 3 from 42 (at least one of the 4 subcodes must match)...")
+  val codeMatches = codeByteRange map { i => equal(s"code$i", queryBytes(i)) }
+  val pipelineRadius0 = Seq(
+      filter(or(codeMatches:_*)),
+      sort(orderBy(ascending("code"))),
+      out("HammingOut")
+    ) 
+  collection.aggregate(pipelineRadius0).printResults()
+  
+  println("\nSame results when retrieved after saving to a separate collection...")
+  val outCollection: MongoCollection[Document] = database.getCollection("HammingOut")
+  outCollection.find().printResults()
+  
+  // Now demonstrate queries for multiple binary values...
+  
   println("\nReport the operations used to query for a code of 39 or 42...")
   // The Mongo Scala driver doesn't support the explain() method for analyzing queries, so use runCommand()
   val commandJSON = Document("""{ explain: { find: "Hamming", filter: { "code": {"$in": [39, 42] } } } }""")
@@ -65,15 +98,6 @@ object HammingNearestNeighbors extends App {
   println("\nShow the query results...")
   collection.find(in("code", 39, 42)).limit(10).printResults()
   
-  val queryValue = 42
-  val queryBytes = codeByteRange map { i => byte2Bson(getByteFromInt(queryValue, i)) } 
-  
-  println("\nQuery for matches of 42 in the most significant byte...")
-  collection.find( equal("code3", queryBytes(codeNumBytes - 1)) ).limit(10).printResults()
-  
-  println("\nQuery for matches of 42 in the least significant byte...")
-  collection.find( equal("code0", queryBytes(0)) ).limit(10).printResults()
-
   println("\nQuery for matches of 39 or 42 in the least significant byte...")
   val queryTwoLSBs = List(39, 42) map { x => byte2Bson(getByteFromInt(x, 0)) }
   // Append the splat operator ":_*" to the query List to force Scala to recognize it as varargs.
@@ -87,15 +111,24 @@ object HammingNearestNeighbors extends App {
   val twoBitBytes = (0 to 7).combinations(2).toList map { c => oneBits2Byte(c.toList) } 
   twoBitBytes foreach { b => println(byte2String(b)) }
   
-  println("\nList all bytes at a Hamming distance of two from the value 255...")
+  println("\nList all bytes at a Hamming distance of two from the value 255 (b11111111)...")
   twoBitBytes map { b => (b ^ 255).toByte } foreach { b => println(byte2String(b)) }
   
   println("\nList all bytes at a Hamming distance of two from the value 42 (b00101010)...")
   val twoFrom42 = twoBitBytes map { b => (b ^ byte42).toByte }
   twoFrom42 foreach { b => println(byte2String(b)) }
-
+  
   println("\nVerify that each previous value has two flipped bits relative to 42...")
-  println(twoFrom42 map { b => byte2String((b ^ byte42).toByte) count { _ == '1' } } mkString " ")
+  println(twoFrom42 map { b => popcount((b ^ byte42).toByte) } mkString " ")
+
+  println("\nQuery for documents with code0 at a Hamming distance of two from the value 42 (b00101010)...")
+  val pipelineCode0 = Seq(
+      filter( in("code0", twoFrom42 map { byte2Bson(_) } :_*) ), 
+      sort( orderBy(ascending("code")) )      
+    ) 
+  val testObservable = collection.aggregate(pipelineCode0).results()  
+  testObservable foreach { d => println(d.toJson) }
+  
 
   mongoClient.close()
 }
