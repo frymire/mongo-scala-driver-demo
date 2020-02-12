@@ -45,11 +45,12 @@ object AdminDemo extends App {
   collection.find().printResults()
  
   println("\nCreate an index on the 'i' field of the AdminDemo collection, sorted in ascending order...")
-  collection.createIndex(ascending("i")).printResults("Created an index named: ")
+  collection.createIndex(ascending("i")).printResults()
 
   println("\nCreate a text index on the 'content' field of the AdminDemo collection...")
-  collection.createIndex(Document("content" -> "text")).printResults("Created an index named: ")
+  collection.createIndex(Document("content" -> "text")).printResults()
   
+  println("\nList all indexes...")
   collection.listIndexes().printResults()
   
   println("\nDrop the new index...")

@@ -38,16 +38,16 @@ object CRUD extends App {
   println("\nAdd a document...")
   collection.insertOne(doc3).results()
   collection.find.first().printResults()
-  println(s"Number of documents (should be 1): ${collection.countDocuments().headResult()}")
+  println(s"Number of documents (should be 1): ${collection.countDocuments().result()}")
   
   println("\nInsert 10 new documents, but without incurring network I/O...")
   val documents = (1 to 10) map { i => Document("i" -> i) }
   val insertObservable = collection.insertMany(documents)
-  println(s"# documents after inserting 10 (still 1, since no network I/O): ${collection.countDocuments().headResult()}")
+  println(s"# documents after inserting 10 (still 1, since no network I/O): ${collection.countDocuments().result()}")
   
-  println("\nForce it to execute by using results() from the Helpers trait...")
+  println("\nForce it to execute by using result() from the Helpers trait...")
   insertObservable.results()
-  println(s"Number of documents (should be 101):  ${collection.countDocuments().headResult()}")
+  println(s"Number of documents (should be 11): ${collection.countDocuments().result()}")
   
   println("\nPrint all of the results...")
   collection.find().printResults()
@@ -78,19 +78,19 @@ object CRUD extends App {
   collection.aggregate(pipeline2).printResults()
   
   println("\nUpdate one record...")
-  collection.updateOne(equal("i", 10), set("i", 110)).printHeadResult("Update Result: ")
+  collection.updateOne(equal("i", 10), set("i", 110)).printResults()
   collection.find().printResults()
   
   println("\nUpdate multiple records...")
-  collection.updateMany(lt("i", 4), inc("i", 100)).printHeadResult("Update Result: ")
+  collection.updateMany(lt("i", 4), inc("i", 100)).printResults()
   collection.find().printResults()  
   
   println("\nDelete one record...")
-  collection.deleteOne(equal("i", 6)).printHeadResult("Update Result: ")
+  collection.deleteOne(equal("i", 6)).printResults()
   collection.find().printResults()
   
   println("\nDelete multiple records...")
-  collection.deleteMany(gte("i", 100)).printHeadResult("Update Result: ")
+  collection.deleteMany(gte("i", 100)).printResults()
   collection.find().printResults()
   
   // Define multiple document insertion, update, deletion and replacement operations to be executed in bulk.
