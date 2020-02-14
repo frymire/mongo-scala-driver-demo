@@ -4,7 +4,7 @@ import org.mongodb.scala._
 import org.mongodb.scala.model.Filters._
 import org.mongodb.scala.model.Projections._
 
-import us.dac.Helpers._
+import us.dac.ObservableHelpers._
 
 // Before running, call "mongod --dbpath C:\Users\Mark.E.Frymire\Documents\MongoDB" or equivalent.
 object Projection extends App {

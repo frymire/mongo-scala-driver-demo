@@ -4,7 +4,7 @@ import org.mongodb.scala._
 import org.mongodb.scala.model.Filters.equal
 import org.mongodb.scala.model.Indexes.hashed
 
-import us.dac.Helpers._
+import us.dac.ObservableHelpers._
 
 object HashedIndex extends App {
    

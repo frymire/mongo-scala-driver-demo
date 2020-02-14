@@ -3,7 +3,7 @@ package us.dac
 import org.mongodb.scala._
 import org.mongodb.scala.model.Indexes._
 
-import us.dac.Helpers._
+import us.dac.ObservableHelpers._
 
 object AdminDemo extends App {
   

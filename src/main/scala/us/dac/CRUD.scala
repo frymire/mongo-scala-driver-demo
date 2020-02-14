@@ -9,7 +9,7 @@ import org.mongodb.scala.model.Accumulators._
 import org.mongodb.scala.model.Updates._
 import org.mongodb.scala.model.{WriteModel, InsertOneModel, UpdateOneModel, DeleteOneModel, ReplaceOneModel, BulkWriteOptions}
 
-import us.dac.Helpers._
+import us.dac.ObservableHelpers._
 
 // Before running, call "mongod --dbpath C:\Users\Mark.E.Frymire\Documents\MongoDB" or equivalent.
 object CRUD extends App {

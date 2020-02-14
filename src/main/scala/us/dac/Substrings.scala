@@ -2,7 +2,7 @@ package us.dac
 
 import org.mongodb.scala._
 
-import us.dac.Helpers._
+import us.dac.ObservableHelpers._
 
 object Substrings extends App {
   

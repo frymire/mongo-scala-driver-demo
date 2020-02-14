@@ -13,38 +13,8 @@ import org.mongodb.scala.model.Projections._
 
 import org.bson.codecs.configuration.CodecRegistries.{fromRegistries, fromProviders}
 
-import us.dac.Helpers._
-
-
-object BinaryHelpers {
-  
-  /** Returns a byte from a list of positions with bits to be set to 1. */
-  def oneBits2Byte(ones: List[Int]) = ones map { 1 << _ } reduce { _ | _ } toByte;
-
-  /** Returns the byte in the specified position (MSB = 3, LSB = 0) of the provided Int. */
-  def getByteFromInt(x: Int, byteIndex: Int): Byte = (x >> 8*byteIndex).toByte
-  
-  /** Returns a BsonBinary instance populated with a provided Byte. */
-  def byte2Bson(b: Byte) = BsonBinary(Array(b))
-  
-  /** Returns an Int based on a binary string. */
-  def binaryString2Int(str: String) = Integer.parseInt(str.replaceAll("\\s", ""), 2)
-
-  /** Returns a string that results from prepending a provided string with 0s to reach a specified length. */
-  def pad(str: String, nBits: Int) = {
-    val unpaddedString = str.takeRight(nBits)
-    ("0" * (nBits - unpaddedString.length)) + unpaddedString     
-  }
-  
-  /** Returns a string representation of a byte, padded to eight characters. */
-  def byte2String(b: Byte) = pad(b.toBinaryString, 8)
-  
-  /** Returns the number of bits in a byte that are set to 1. */
-  def popcount(b: Byte) = byte2String(b) count { _ == '1' }
-  
-  /** Returns the number of flipped bits between two input bytes. */
-  def hamming(b1: Byte, b2: Byte) = popcount((b1 ^ b2).toByte)
-}
+import us.dac.ObservableHelpers._
+import us.dac.BinaryHelpers._
 
 
 case class Code(
@@ -55,13 +25,22 @@ case class Code(
     code0: Array[Byte]) {
 
   val codes = List(code3, code2, code1, code0) map { _(0) }
-  val integerCodeStrings = codes map {c => f"$c%4d"}  mkString " "
-  val binaryCodeStrings = codes map { c => BinaryHelpers.byte2String(c) } mkString " "
-  override def toString() = f"$code%11d, [$integerCodeStrings], [$binaryCodeStrings]"
+  
+  def getSubcode(position: Int) = byte2Bson(codes(Code.codeHighByte - position))
+
+  override def toString() = {
+    val integerCodeStrings = codes map {c => f"${ if (c >= 0) c else (c + 256) }%4d"} mkString " "
+    val binaryCodeStrings = codes map { byte2String(_) } mkString " "
+    f"$code%11d, [$integerCodeStrings], [$binaryCodeStrings]"
+  }
 }
 
 object Code {
   
+  /*
+   * NOTE: The optimum substring length is log-base-2(numDocuments). So, with 2^16 = 65,536 records,
+   * you would want substrings of 16 bits. For 64-bit codes, then, you would have 4 substrings.
+   */
   val codeNumBytes = 4
   val codeNumBits = 8*codeNumBytes
   val codeHighByte = codeNumBytes - 1
@@ -75,8 +54,9 @@ object Code {
 //    Document("code" -> code) ++ codes ++ Document("codeString" -> pad(code.toBinaryString, codeNumBits)) ++ codeStrings
 //  }
   
+  /** Returns a new Code instance based on the provided Int value. */
   def apply(code: Int) = { 
-    val subcodes = codeByteRange map { i => BinaryHelpers.getByteFromInt(code, i) }
+    val subcodes = codeByteRange map { i => getByteFromInt(code, i) }
     new Code(
         code, 
         Array(subcodes(3)),
@@ -84,17 +64,10 @@ object Code {
         Array(subcodes(1)),
         Array(subcodes(0)) 
     )
-  }    
+  }
 }
 
-/*
- * NOTE: The optimum substring length is log-base-2(numDocuments). So, with 2^16 = 65,536 records,
- * you would want substrings of 16 bits. For 64-bit codes, then, you would have 4 substrings.
- */
 object HammingNearestNeighbors extends App {
-
-  import BinaryHelpers._
-  
 
   // Specify a codec registry to convert the Code type to and from BSON.
   val codeCodecProvider = createCodecProviderIgnoreNone[Code]()
@@ -123,19 +96,17 @@ object HammingNearestNeighbors extends App {
   Code.codeByteRange foreach { i => codeCollection.createIndex(hashed(s"code$i")).printResults() } 
   codeCollection.listIndexes().printResults()
 
-  // TODO: Move this to Code
-  val queryValue = 42
-  val queryBytes = Code.codeByteRange map { i => byte2Bson(getByteFromInt(queryValue, i)) } 
+  val query42 = Code(42)
   
   println("\nQuery for the first 10 matches of 42 in the least significant byte...")
-  codeCollection.find( equal("code0", queryBytes(0)) ).limit(10).printResults()
+  codeCollection.find( equal("code0", query42.getSubcode(0)) ).limit(10).printResults()
 
   println("\nQuery for the first 10 matches of 42 in the most significant byte...")
-  codeCollection.find( equal(s"code${Code.codeHighByte}", queryBytes(Code.codeHighByte)) ).limit(10).printResults()
+  codeCollection.find( equal(s"code${Code.codeHighByte}", query42.getSubcode(Code.codeHighByte)) ).limit(10).printResults()
   
   // TODO: Compute and print the Hamming distance for the whole code with these results.
   println("\nQuery for documents at a max Hamming distance of 3 from 42 (at least one of the 4 subcodes must match)...")
-  val codeMatches = Code.codeByteRange map { i => equal(s"code$i", queryBytes(i)) }
+  val codeMatches = Code.codeByteRange map { i => equal(s"code$i", query42.getSubcode(i)) }
   val pipelineRadius0 = Seq(
       filter(or(codeMatches:_*)),
       sort(orderBy(ascending("code"))),

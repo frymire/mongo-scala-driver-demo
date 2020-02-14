@@ -5,7 +5,7 @@ import org.mongodb.scala.model.Filters.gt
 import org.mongodb.scala.model.Aggregates.{project, filter}
 import org.mongodb.scala.model.Projections.{fields, include}
 
-import us.dac.Helpers._
+import us.dac.ObservableHelpers._
 
 
 object Merge extends App {

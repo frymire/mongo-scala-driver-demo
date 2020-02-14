@@ -6,7 +6,7 @@ import org.mongodb.scala.model.Aggregates.{filter, group, sort}
 import org.mongodb.scala.model.Accumulators.{sum}
 import org.mongodb.scala.model.Sorts.{orderBy, descending}
 
-import us.dac.Helpers._
+import us.dac.ObservableHelpers._
 
 
 object Aggregation extends App {

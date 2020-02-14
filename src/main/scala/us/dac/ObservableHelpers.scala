@@ -7,7 +7,7 @@ import scala.concurrent.duration.Duration
 
 import org.mongodb.scala._
 
-object Helpers {
+object ObservableHelpers {
 
   trait ImplicitObservable[T] {
     

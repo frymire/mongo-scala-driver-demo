@@ -3,7 +3,7 @@ package us.dac
 import org.mongodb.scala._
 import org.mongodb.scala.model.Filters._
 
-import us.dac.Helpers._
+import us.dac.ObservableHelpers._
 
 /*
  * Generally, the Aggregation pipeline is supposed to be faster, but the Map-Reduce pipeline

@@ -9,7 +9,7 @@ import org.mongodb.scala.model.Filters._
 
 import org.bson.codecs.configuration.CodecRegistries.{fromRegistries, fromProviders}
 
-import us.dac.Helpers._
+import us.dac.ObservableHelpers._
 
 
 // Define a class to be used as a collection schema in the Mongo database.

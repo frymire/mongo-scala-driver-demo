@@ -7,7 +7,7 @@ import org.mongodb.scala.model.Aggregates.{group, project, out}
 import org.mongodb.scala.model.Projections.{fields, include, computed}
 import org.mongodb.scala.model.Updates.{combine, bitwiseAnd, bitwiseOr, bitwiseXor}
 
-import us.dac.Helpers._
+import us.dac.ObservableHelpers._
 import org.mongodb.scala.model.Projections
 
 // https://docs.mongodb.com/manual/reference/operator/update/bit/
