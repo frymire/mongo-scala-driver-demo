@@ -65,17 +65,17 @@ object Code {
         Array(subcodes(0)) 
     )
   }
+  
+  // Specify a codec registry to convert the Code type to and from BSON.
+  val codeCodecProvider = createCodecProviderIgnoreNone[Code]()
+  val codecRegistry = fromRegistries(fromProviders(codeCodecProvider), DEFAULT_CODEC_REGISTRY)  
 }
 
 object HammingNearestNeighbors extends App {
 
-  // Specify a codec registry to convert the Code type to and from BSON.
-  val codeCodecProvider = createCodecProviderIgnoreNone[Code]()
-  val codecRegistry = fromRegistries(fromProviders(codeCodecProvider), DEFAULT_CODEC_REGISTRY)
-
   // Make two Hamming collection references, one for generic documents and the other specifically for Codes.
   val mongoClient = MongoClient()
-  val database = mongoClient.getDatabase("MongoScalaDriverDemo").withCodecRegistry(codecRegistry)
+  val database = mongoClient.getDatabase("MongoScalaDriverDemo").withCodecRegistry(Code.codecRegistry)
   val documentCollection: MongoCollection[Document] = database.getCollection("Hamming")
   val codeCollection: MongoCollection[Code] = database.getCollection("Hamming")
   codeCollection.drop().results()
