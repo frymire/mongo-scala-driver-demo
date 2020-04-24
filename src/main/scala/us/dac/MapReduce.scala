@@ -12,7 +12,6 @@ import us.dac.ObservableHelpers._
  */
 object MapReduce extends App {
 
-  // Connect to the "MongoScalaDriverDemo" database and make a new collection called "CRUD".
   val mongoClient = MongoClient()
   val database = mongoClient.getDatabase("MongoScalaDriverDemo")
   val collection: MongoCollection[Document] = database.getCollection("MapReduce")
@@ -28,19 +27,19 @@ object MapReduce extends App {
   collection.insertMany(documents).printResults()
   collection.find().printResults()
 
-
-  val mapFunction1 = "function() { emit(this.cust_id, this.amount); };"
-  val mapFunction2 = "function() { emit(this.status, this.amount); };"
-  val mapFunction3 = "function() { for (var i = 0; i < 3; i++) { emit(this.status, this.amount); } };"
+  
   val reduceFunction = "function(key, values) { return Array.sum(values); };"
 
   println("\nRun map-reduce to sum the amounts by customer ID...")
+  val mapFunction1 = "function() { emit(this.cust_id, this.amount); };"
   collection.mapReduce(mapFunction1, reduceFunction).printResults()
 
   println("\nRun map-reduce to sum the amounts by status...")
+  val mapFunction2 = "function() { emit(this.status, this.amount); };"
   collection.mapReduce(mapFunction2, reduceFunction).printResults()
 
   println("\nUse a map function that emits three copies of each input, then sum amounts by status...")
+  val mapFunction3 = "function() { for (var i = 0; i < 3; i++) { emit(this.status, this.amount); } };"
   collection.mapReduce(mapFunction3, reduceFunction).printResults()
 
   println("\nIf the driver doesn't support some needed Map-Reduce functionality, use a direct database command.")  
