@@ -5,7 +5,7 @@ import org.mongodb.scala.bson.BsonBinary
 object BinaryHelpers {
   
   /** Returns a byte from a list of positions with bits to be set to 1. */
-  def oneBits2Byte(ones: List[Int]) = ones map { 1 << _ } reduce { _ | _ } toByte;
+  def oneBits2Byte(ones: List[Int]) = if (ones.length == 0) { 0.toByte } else ones map { 1 << _ } reduce { _ | _ } toByte;
 
   /** Returns the byte in the specified position (MSB = 3, LSB = 0) of the provided Int. */
   def getByteFromInt(x: Int, byteIndex: Int): Byte = (x >> 8*byteIndex).toByte
