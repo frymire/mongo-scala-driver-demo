@@ -9,13 +9,27 @@ import us.dac.BinaryHelpers._
 
 
 /*
- * NOTE: The optimum substring length is log-base-2(numDocuments). So, with 2^16 = 65,536 records,
- * you would want substrings of 16 bits. For 64-bit codes, then, you would have 4 substrings.
+ * NOTE: The optimum number of subcodes is the code length divided by log-base-2(numDocuments).
+ *  
+ * -- For 16-bit codes over 2^8 = 256 records, use 16/8 = 2 subcodes of 8 bits
+ * -- For 24-bit codes over 2^8 = 256 records, use 24/8 = 3 subcodes of 8 bits 
+ * -- For 32-bit codes over 2^8 = 256 records, use 32/8 = 4 subcodes of 8 bits (too few records to be useful).
+ * 
+ * -- For 32-bit codes over 2^16 = 65,536 records, use 32/16 = 2 subcodes of 16 bits 
+ * -- For 48-bit codes over 2^16 = 65,536 records, use 48/16 = 3 subcodes of 16 bits 
+ * -- For 64-bit codes over 2^16 = 65,536 records, use 64/16 = 4 subcodes of 16 bits (maybe still too small to be useful).
+ * 
+ * -- For 48-bit codes over 2^24 = 16.78 million records, use 48/24 = 2 subcodes of 24 bits (2*6*16 = 192 MB without the index)
+ * -- For 72-bit codes over 2^24 = 16.78 million records, use 72/24 = 3 subcodes of 24 bits (3*9*16 = 432 MB without the index)
+ * -- For 96-bit codes over 2^24 = 16.78 million records, use 96/24 = 4 subcodes of 24 bits (4*12*16 = 768 MB without the index)
+ * 
+ * -- For 64-bit codes over 2^32 = 4.3 billion records, use 64/32 = 2 subcodes of 32 bits (2*8*4 = 64 GB without the index, too big)
+ * -- For 96-bit codes over 2^32 = 4.3 billion records, use 96/32 = 3 subcodes of 32 bits (3*12*4 = 144 GB without the index, too big)
  */
 
 trait Code {
   
-  val code: Int
+  val code: Int // TODO: remove this from the high-level definition.
   val codes: List[Byte]
   val codeHighByte: Int
 

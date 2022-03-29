@@ -11,18 +11,18 @@ import us.dac.BinaryHelpers._
 object HammingNearestNeighborsExhaustive extends App {
   
   val query42 = Code32(42)
-  val queryRadius = 3
+  val queryRadius = 1
   val subcodeRadius = queryRadius / query42.codes.length
   
   val mongoClient = MongoClient()
   val database = mongoClient.getDatabase("MongoScalaDriverDemo").withCodecRegistry(Code32.codecRegistry)
   val codeCollection: MongoCollection[Code32] = database.getCollection("Hamming")
   
-  println(s"\nExhaustively verify the total number of documents with any subcode within a Hamming radius of $subcodeRadius from 42...") 
-  val numDocsAnySubcodeWithinRadius = codeCollection.find().results() count { code =>
-    Code32.codeByteRange map { i => hamming(code.getSubcode(i), query42.getSubcode(i)) <= subcodeRadius } reduce { _ || _ }
-  }
-  println(s"\nNumber of documents with any code within radius subcodeRadius (exhausive): $numDocsAnySubcodeWithinRadius") 
+//  println(s"\nExhaustively verify the total number of documents with any subcode within a Hamming radius of $subcodeRadius from 42...") 
+//  val numDocsAnySubcodeWithinRadius = codeCollection.find().results() count { code =>
+//    Code32.codeByteRange map { i => hamming(code.getSubcode(i), query42.getSubcode(i)) <= subcodeRadius } reduce { _ || _ }
+//  }
+//  println(s"\nNumber of documents with any code within radius subcodeRadius (exhausive): $numDocsAnySubcodeWithinRadius") 
   
 
   println(s"\nExhaustively verify the total number of documents with a code within a Hamming radius $queryRadius of the query 42...")
